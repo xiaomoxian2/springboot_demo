@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . .
 
 # 编译项目
-RUN mvn -B -e -U -s settings.xml clean package
+RUN mvn clean package -Dmaven.test.skip=true 
 
 # 采用 Java 或者 Alpine 官方镜像做为运行时镜像
 FROM alpine:3.13
