@@ -17,7 +17,7 @@ FROM alpine:3.13
 WORKDIR /app
 
 # 将构建产物拷贝到运行时的工作目录中
-COPY --from=build /app/**/*.jar ./
+COPY --from=build /app/**/*.jar ./antcloud-0.0.1-SNAPSHOT.jar
 
 # 暴露端口
 # 此处端口必须与构建小程序服务端时填写的服务端口和探活端口一致，不然会部署失败
