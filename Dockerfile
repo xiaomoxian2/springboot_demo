@@ -1,18 +1,35 @@
-FROM maven:3.5.0-jdk-8-alpine AS builder
+# 采用 Java 官方镜像做为构建镜像
+FROM maven:3.6.0-jdk-8-slim AS build
 
-# add pom.xml and source code
-ADD ./pom.xml pom.xml
-ADD ./src src/
+# 设置应用工作目录
+WORKDIR /app
 
-# package jar
-RUN mvn clean package -Dmaven.test.skip=true -P enterprise
+# 将所有文件拷贝到容器中
+COPY . .
 
-# Second stage: minimal runtime environment
-From openjdk:8-jre-alpine
+# 编译项目
+RUN mvn -B -e -U -s settings.xml clean package
 
-# copy jar from the first stage
-COPY --from=builder target/my-app-1.0-SNAPSHOT.jar my-app-1.0-SNAPSHOT.jar
+# 采用 Java 或者 Alpine 官方镜像做为运行时镜像
+FROM alpine:3.13
 
-EXPOSE 8080
+# 设置应用工作目录
+WORKDIR /app
 
-CMD ["java", "-jar", "my-app-1.0-SNAPSHOT.jar"]
+# 将构建产物拷贝到运行时的工作目录中
+COPY --from=build /app/**/*.jar ./
+
+# 暴露端口
+# 此处端口必须与构建小程序服务端时填写的服务端口和探活端口一致，不然会部署失败
+EXPOSE 80
+
+# 安装基础命令
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --update --no-cache ca-certificates curl openjdk8-jre-base tzdata && \
+    rm -f /var/cache/apk/*
+
+# 设置时区
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo Asia/Shanghai > /etc/timezone
+
+CMD ["java", "-jar", "antcloud-0.0.1-SNAPSHOT.jar"]
